@@ -13,7 +13,7 @@ jobs:
     
     - name: Deploy with SSH
       uses: easingthemes/ssh-deploy@main
-      env:
+      with:
         SSH_PRIVATE_KEY: ${{ secrets.ssh_key }}
         REMOTE_HOST: ${{ secrets.dns_name }}
         REMOTE_USER: ${{ secrets.username }}
