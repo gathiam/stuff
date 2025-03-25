@@ -3,31 +3,19 @@ name: Calculator CI/CD
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     
     steps:
     - uses: actions/checkout@v3
     
-    - name: Deploy to server
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.dns_name }}
-        username: ${{ secrets.username }}
-        key: ${{ secrets.ssh_key }}
-        script: |
-          mkdir -p ${{ secrets.target_dir }}
-          
-    - name: Copy files to server
-      uses: appleboy/scp-action@master
-      with:
-        host: ${{ secrets.dns_name }}
-        username: ${{ secrets.username }}
-        key: ${{ secrets.ssh_key }}
-        source: "CalculatorApp.py,main.py"
-        target: ${{ secrets.target_dir }}
+    - name: Deploy with SSH
+      uses: easingthemes/ssh-deploy@main
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.ssh_key }}
+        REMOTE_HOST: ${{ secrets.dns_name }}
+        REMOTE_USER: ${{ secrets.username }}
+        TARGET: ${{ secrets.target_dir }}
+        SOURCE: "CalculatorApp.py,main.py"
