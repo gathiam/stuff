@@ -1,24 +1,40 @@
-name: Debug SSH Connection
+name: Calculator CI/CD
 
 on:
   push:
     branches: [ main ]
 
 jobs:
-  debug:
+  deploy:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Debug SSH
+    - uses: actions/checkout@v3
+    
+    - name: Setup SSH key
       run: |
-        echo "Setting up SSH key..."
+        # Create SSH directory
         mkdir -p ~/.ssh
-        # Write the key with proper formatting
-        echo "${{ secrets.ssh_key }}" | tr -d '\r' > ~/.ssh/deploy_key
+        
+        # Decode the base64 SSH key and save it
+        echo "${{ secrets.ssh_key }}" | base64 -d > ~/.ssh/deploy_key
+        
+        # Set proper permissions for the SSH key
         chmod 600 ~/.ssh/deploy_key
         
-        # Add the host to known_hosts
+        # Add host to known_hosts to avoid verification prompt
         ssh-keyscan ${{ secrets.dns_name }} >> ~/.ssh/known_hosts
         
-        # Try connection with StrictHostKeyChecking=no
-        ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ${{ secrets.username }}@${{ secrets.dns_name }} "echo Connection successful"
+        # Test connection
+        echo "Testing SSH connection..."
+        ssh -i ~/.ssh/deploy_key ${{ secrets.username }}@${{ secrets.dns_name }} "echo Connection successful"
+    
+    - name: Deploy application
+      run: |
+        # Create target directory if it doesn't exist
+        ssh -i ~/.ssh/deploy_key ${{ secrets.username }}@${{ secrets.dns_name }} "mkdir -p ${{ secrets.target_dir }}"
+        
+        # Copy application files
+        scp -i ~/.ssh/deploy_key CalculatorApp.py main.py ${{ secrets.username }}@${{ secrets.dns_name }}:${{ secrets.target_dir }}/
+        
+        echo "Deployment successful"
