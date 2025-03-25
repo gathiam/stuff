@@ -13,9 +13,12 @@ jobs:
       run: |
         echo "Setting up SSH key..."
         mkdir -p ~/.ssh
-        echo "${{ secrets.ssh_key }}" > ~/.ssh/deploy_key
+        # Write the key with proper formatting
+        echo "${{ secrets.ssh_key }}" | tr -d '\r' > ~/.ssh/deploy_key
         chmod 600 ~/.ssh/deploy_key
-        echo "Running ssh-keyscan..."
-        ssh-keyscan ${{ secrets.dns_name }}
-        echo "Trying SSH connection with verbose output..."
-        ssh -v -i ~/.ssh/deploy_key ${{ secrets.username }}@${{ secrets.dns_name }} "echo Connection successful"
+        
+        # Add the host to known_hosts
+        ssh-keyscan ${{ secrets.dns_name }} >> ~/.ssh/known_hosts
+        
+        # Try connection with StrictHostKeyChecking=no
+        ssh -o StrictHostKeyChecking=no -i ~/.ssh/deploy_key ${{ secrets.username }}@${{ secrets.dns_name }} "echo Connection successful"
