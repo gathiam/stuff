@@ -1,0 +1,27 @@
+name: Calculator CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to server
+      env:
+        DNS_NAME: ${{ secrets.dns_name }}
+        USERNAME: ${{ secrets.username }}
+        SSH_KEY: ${{ secrets.ssh_key }}
+        TARGET_DIR: ${{ secrets.target_dir }}
+      run: |
+        echo "$SSH_KEY" > deploy_key.pem
+        chmod 600 deploy_key.pem
+        ssh -o StrictHostKeyChecking=no -i deploy_key.pem $USERNAME@$DNS_NAME "mkdir -p $TARGET_DIR"
+        scp -i deploy_key.pem CalculatorApp.py main.py $USERNAME@$DNS_NAME:$TARGET_DIR/
